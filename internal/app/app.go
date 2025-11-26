@@ -2,10 +2,13 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/Mariia230800/redis-data-race-demo/config"
+	"github.com/Mariia230800/redis-data-race-demo/internal/config"
+	"github.com/Mariia230800/redis-data-race-demo/internal/ifrastructure/redis"
 	"github.com/Mariia230800/redis-data-race-demo/internal/log"
+	cache "github.com/Mariia230800/redis-data-race-demo/internal/repository/redis"
 )
 
 func Run(ctx context.Context) error {
@@ -13,6 +16,14 @@ func Run(ctx context.Context) error {
 	log.Init(cfg.Logger.Level)
 	logger := log.Get()
 	logger.Infof("Logger initialized with level: %s", cfg.Logger.Level)
+
+	redisClient, err := redis.InitRedis(cfg)
+	if err != nil {
+		return fmt.Errorf("redis init: %w", err)
+	}
+
+	ttl := time.Duration(cfg.Redis.CacheTTLHours) * time.Hour
+	cache := cache.NewRedisCache(redisClient, ttl) // ttl задаёт время жизни кеша (24 часа)
 
 	done := make(chan struct{})
 	go func() {

@@ -6,7 +6,7 @@ import (
 	"github.com/caarlos0/env/v10"
 	"github.com/joho/godotenv"
 
-	"github.com/Mariia230800/redis-data-race-demo/config/modules"
+	"github.com/Mariia230800/redis-data-race-demo/internal/config/modules"
 	"github.com/Mariia230800/redis-data-race-demo/internal/log"
 )
 
