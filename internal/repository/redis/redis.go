@@ -11,6 +11,8 @@ import (
 type RedisRepository interface {
 	Set(movie models.Movie) error
 	Get(id string) (*models.Movie, error)
+	GetMovies(ctx context.Context) ([]models.Movie, error)
+	SetMovies(ctx context.Context, movies []models.Movie) error
 	Ping() error
 }
 

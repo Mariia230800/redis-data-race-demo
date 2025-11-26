@@ -8,7 +8,9 @@ import (
 	"github.com/Mariia230800/redis-data-race-demo/internal/config"
 	"github.com/Mariia230800/redis-data-race-demo/internal/ifrastructure/redis"
 	"github.com/Mariia230800/redis-data-race-demo/internal/log"
+	"github.com/Mariia230800/redis-data-race-demo/internal/repository"
 	cache "github.com/Mariia230800/redis-data-race-demo/internal/repository/redis"
+	"github.com/Mariia230800/redis-data-race-demo/internal/service"
 )
 
 func Run(ctx context.Context) error {
@@ -24,6 +26,10 @@ func Run(ctx context.Context) error {
 
 	ttl := time.Duration(cfg.Redis.CacheTTLHours) * time.Hour
 	cache := cache.NewRedisCache(redisClient, ttl) // ttl задаёт время жизни кеша (24 часа)
+
+	db := repository.NewMockRepo()
+
+	service := service.NewService(db, cache)
 
 	done := make(chan struct{})
 	go func() {
