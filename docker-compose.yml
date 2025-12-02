@@ -28,13 +28,19 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     ports:
       - "9093:9092"
+    healthcheck:
+      test: ["CMD", "nc", "-z", "kafka", "9092"]
+      interval: 5s
+      retries: 5
+      start_period: 10s
 
   cron-service:
     build: .
-    container_name: cron-service
     env_file:
       - .env
     depends_on:
-      - redis
-      - kafka
+      redis:
+        condition: service_started
+      kafka:
+        condition: service_healthy
     command: ["./cron-service"]

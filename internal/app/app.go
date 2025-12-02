@@ -3,9 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Mariia230800/redis-data-race-demo/internal/config"
+	"github.com/Mariia230800/redis-data-race-demo/internal/cron"
+	"github.com/Mariia230800/redis-data-race-demo/internal/ifrastructure/kafka"
 	"github.com/Mariia230800/redis-data-race-demo/internal/ifrastructure/redis"
 	"github.com/Mariia230800/redis-data-race-demo/internal/log"
 	"github.com/Mariia230800/redis-data-race-demo/internal/repository"
@@ -31,15 +34,27 @@ func Run(ctx context.Context) error {
 
 	service := service.NewService(db, cache)
 
-	done := make(chan struct{})
+	brokers := strings.Split(cfg.Kafka.KafkaBroker, ",")
+	kafkaClient, err := kafka.NewKafkaProducer(brokers)
+	if err != nil {
+		return fmt.Errorf("kafka init: %w", err)
+	}
+	defer kafkaClient.Close()
+
+	writerCron := cron.NewWriterCron(service)
+	logger.Infof("Starting WriterCron...")
 	go func() {
-		<-ctx.Done()
-		close(done)
+		writerCron.Run(ctx)
+		logger.Infof("WriterCron stopped")
+	}()
+	senderCron := cron.NewSenderCron(service, kafkaClient, 10*time.Minute)
+	logger.Infof("Starting SenderCron...")
+	go func() {
+		senderCron.Run(ctx)
+		logger.Infof("SenderCron stopped")
 	}()
 
-	logger.Info("Cron-service running...")
-	for {
-		logger.Info("Cron heartbeat")
-		time.Sleep(30 * time.Second)
-	}
+	<-ctx.Done()
+	logger.Info("Cron-service stopped gracefully")
+	return nil
 }
