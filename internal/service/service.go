@@ -42,7 +42,10 @@ func (s *Service) GetMovies(ctx context.Context) ([]models.Movie, error) {
 
 	filtred := filterByYear(movies)
 
-	_ = s.cache.SetMovies(ctx, filtred)
+	if err := s.cache.SetMovies(ctx, filtred); err != nil {
+		log.Errorf("failed to set movies in cache: %v", err)
+		return nil, fmt.Errorf("cache set failed: %w", err)
+	}
 
 	return filtred, nil
 }
